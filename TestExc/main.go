@@ -4,9 +4,39 @@ import (
 	"flag"
 	"fmt"
 	"math/rand"
+	"sort"
 	"time"
 )
 
+//Вывод числе на экран
+func printNumbers(finalArr *[]int) {
+	for _, value := range *finalArr {
+		fmt.Println(value)
+	}
+}
+
+//Создание словаря
+func generateUniqueNumbers(max int, limit int) *[]int {
+	//Создаем словарь и заполняем его, чтобы проверять уникальность числа. true - значит число уже было
+	numDict := make(map[int]bool)
+
+	for {
+		randNum := rand.Intn(max) + 1 //Добавляем единицу ради устранения нуля
+		if _, ok := numDict[randNum]; !ok {
+			numDict[randNum] = true
+		}
+		if len(numDict) == limit {
+			//Перемещаем полученные значения в массив
+			keys := make([]int, 0, len(numDict))
+			for k := range numDict {
+				keys = append(keys, k)
+			}
+			//Сортировка полученных значений
+			sort.Ints(keys)
+			return &keys
+		}
+	}
+}
 
 func main() {
 	//Меняем сид при каждом запуске
@@ -22,23 +52,6 @@ func main() {
 		return
 	}
 
-	//Создаем словарь и заполняем его, чтобы проверять уникальность числа. true - значит число уже было
-	numDict := make(map[int]bool)
-
-	for {
-		randNum := rand.Intn(*max) + 1 //Добавляем единицу ради устранения нуля
-		if _, ok := numDict[randNum]; !ok {
-			numDict[randNum] = true
-		}
-		if len(numDict) == *limit {
-			for name := range numDict {
-				fmt.Println(name)
-			}
-			return
-		}
-	}
+	printNumbers(generateUniqueNumbers(*max, *limit))
 
 }
-
-
-
