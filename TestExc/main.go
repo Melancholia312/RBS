@@ -4,18 +4,41 @@ import (
 	"flag"
 	"fmt"
 	"math/rand"
+	"time"
 )
 
+
 func main() {
+	//Меняем сид при каждом запуске
+	rand.Seed(time.Now().UTC().UnixNano())
+
+	///Парсинг и валидация флагов
 	limit := flag.Int("limit", 0, "# of rand numbers")
-	maxIn := flag.Int("max", 0, "the max value")
+	max := flag.Int("max", 1, "the max value")
 	flag.Parse()
 
-	n := *limit
-	max := *maxIn
-
-	for i:= 0; i < n ; i++{
-		fmt.Println(rand.Intn(max))
+	if (*limit <= 0 || *max <= 0) || (*limit > *max) {
+		fmt.Println("Invalid input")
+		return
 	}
+
+	//Создаем словарь и заполняем его, чтобы проверять уникальность числа. true - значит число уже было
+	numDict := make(map[int]bool)
+
+	for {
+		randNum := rand.Intn(*max) + 1 //Добавляем единицу ради устранения нуля
+		if _, ok := numDict[randNum]; !ok {
+			numDict[randNum] = true
+		}
+		if len(numDict) == *limit {
+			for name := range numDict {
+				fmt.Println(name)
+			}
+			return
+		}
+	}
+
 }
+
+
 
