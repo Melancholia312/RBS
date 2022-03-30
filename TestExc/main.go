@@ -8,35 +8,44 @@ import (
 	"time"
 )
 
-//Вывод числе на экран
-func printNumbers(finalArr *[]int) {
-	for _, value := range *finalArr {
-		fmt.Println(value)
+//randomizer генерирует случайные числа
+func randomizer(channel chan int, exitChan chan int, max int){
+	for {
+		randNum := rand.Intn(max) + 1 //генерация числа. +1 для избежания нуля
+		select {
+			case channel <- randNum: //отправляем числа
+			case <- exitChan: //при получении числа в этот канал заканчиваем работу горутины
+				return
+		}
+
 	}
 }
 
-//Создание словаря
-func generateUniqueNumbers(max int, limit int) *[]int {
-	//Создаем словарь и заполняем его, чтобы проверять уникальность числа. true - значит число уже было
-	numDict := make(map[int]bool)
+//uniqueGenerator проверяет полученные числа на уникальность и выводит их на экран
+func uniqueGenerator(channel chan int,  exitChan chan int, limit int) {
 
-	for {
-		randNum := rand.Intn(max) + 1 //Добавляем единицу ради устранения нуля
-		if _, ok := numDict[randNum]; !ok {
-			numDict[randNum] = true
+	uniqueDict := make(map[int]bool) //словарь для проверки уникальности
+
+	for val := range channel{
+		if _, ok := uniqueDict[val]; !ok {
+			uniqueDict[val] = true //true - значит число уже было
 		}
-		if len(numDict) == limit {
-			//Перемещаем полученные значения в массив
-			keys := make([]int, 0, len(numDict))
-			for k := range numDict {
+		if len(uniqueDict) == limit{ //при наборе нужного количества уникальных чисел говорим горутинам прекратить работу
+			exitChan <- 1
+			keys := make([]int, 0, len(uniqueDict))
+			for k := range uniqueDict {
 				keys = append(keys, k)
 			}
 			//Сортировка полученных значений
 			sort.Ints(keys)
-			return &keys
+			for _, value := range keys{
+				fmt.Println(value) //вывод на экран
+			}
+			break //заканчиваем работу
 		}
 	}
 }
+
 
 func main() {
 	//Меняем сид при каждом запуске
@@ -45,13 +54,23 @@ func main() {
 	///Парсинг и валидация флагов
 	limit := flag.Int("limit", 0, "# of rand numbers")
 	max := flag.Int("max", 1, "the max value")
+	goCount := flag.Int("go", 1, "the max value")
 	flag.Parse()
 
-	if (*limit <= 0 || *max <= 0) || (*limit > *max) {
+	if (*limit <= 0 || *max <= 0) || (*limit > *max) || (*goCount < 1) {
 		fmt.Println("Invalid input")
 		return
 	}
 
-	printNumbers(generateUniqueNumbers(*max, *limit))
+	c1 := make(chan int, *limit) //канал для передачи чисел
+	exitChan := make(chan int) //канал для передачи флага о прекращении работы
+
+	for i:=0; i<*goCount; i++{
+		go randomizer(c1, exitChan, *max) //запускаем n-ное количество горутин
+	}
+
+	go uniqueGenerator(c1, exitChan, *limit)
+
+	fmt.Scanf("%d\n") //ждем окончание работы горутин
 
 }
