@@ -5,15 +5,18 @@ import (
 	"fmt"
 	"math/rand"
 	"sort"
+	"sync"
 	"time"
 )
 
 //randomizer генерирует случайные числа
-func randomizer(channel chan int, exitChan chan int, max int){
+func randomizer(channelNums chan int, exitChan chan int, max int, wg *sync.WaitGroup){
+
+	defer wg.Done()
 	for {
 		randNum := rand.Intn(max) + 1 //генерация числа. +1 для избежания нуля
 		select {
-			case channel <- randNum: //отправляем числа
+			case channelNums <- randNum: //отправляем числа
 			case <- exitChan: //при получении числа в этот канал заканчиваем работу горутины
 				return
 		}
@@ -22,16 +25,18 @@ func randomizer(channel chan int, exitChan chan int, max int){
 }
 
 //uniqueGenerator проверяет полученные числа на уникальность и выводит их на экран
-func uniqueGenerator(channel chan int,  exitChan chan int, limit int) {
+func uniqueGenerator(channelNums chan int,  exitChan chan int, limit int, wg *sync.WaitGroup) {
 
+	defer wg.Done()
 	uniqueDict := make(map[int]bool) //словарь для проверки уникальности
 
-	for val := range channel{
+	for val := range channelNums{
 		if _, ok := uniqueDict[val]; !ok {
 			uniqueDict[val] = true //true - значит число уже было
 		}
 		if len(uniqueDict) == limit{ //при наборе нужного количества уникальных чисел говорим горутинам прекратить работу
 			exitChan <- 1
+			close(exitChan)
 			keys := make([]int, 0, len(uniqueDict))
 			for k := range uniqueDict {
 				keys = append(keys, k)
@@ -41,7 +46,7 @@ func uniqueGenerator(channel chan int,  exitChan chan int, limit int) {
 			for _, value := range keys{
 				fmt.Println(value) //вывод на экран
 			}
-			break //заканчиваем работу
+			return //заканчиваем работу
 		}
 	}
 }
@@ -62,15 +67,18 @@ func main() {
 		return
 	}
 
-	c1 := make(chan int, *limit) //канал для передачи чисел
+	var wg sync.WaitGroup
+	channelNums := make(chan int, *limit) //канал для передачи чисел
 	exitChan := make(chan int) //канал для передачи флага о прекращении работы
 
 	for i:=0; i<*goCount; i++{
-		go randomizer(c1, exitChan, *max) //запускаем n-ное количество горутин
+		wg.Add(1)
+		go randomizer(channelNums, exitChan, *max, &wg) //запускаем n-ное количество горутин
 	}
 
-	go uniqueGenerator(c1, exitChan, *limit)
+	wg.Add(1)
+	go uniqueGenerator(channelNums, exitChan, *limit, &wg)
 
-	fmt.Scanf("%d\n") //ждем окончание работы горутин
+	wg.Wait() //ждем окончание работы горутин
 
 }
