@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <meta http-equiv="X-UA-Compatible" content="ie=edge"/>
+    <title>Go WebSocket Generator</title>
+</head>
+<body>
+
+<h1 align="center">GO number generator</h1>
+
+<form align="center" id="form" method="post">
+    <input type="number" name="range_num" placeholder="Range of numbers" min="1" required>
+    <input type="number" name="limit" placeholder="Amount of numbers" min="1" required>
+    <input type="number" name="go" placeholder="Number of goroutines" min="1" required>
+    <br>
+    <br>
+    <button type="submit">Generate</button>
+</form>
+<br>
+<div align="center" id="nums"></div>
+
+<script src="/static/socket.js"></script>
+</body>
+</html>
