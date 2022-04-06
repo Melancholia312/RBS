@@ -73,7 +73,7 @@ func uniqueGenerator(limit int, max int, goCount int, ws *websocket.Conn) {
 	wg.Wait()
 }
 
-//uniqueGenerator отвечает за обработку веб сокета
+//socketHandler отвечает за обработку веб сокета
 func socketHandler(w http.ResponseWriter, r *http.Request, ) {
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
